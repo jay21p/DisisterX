@@ -61,6 +61,16 @@ body.clean-dark {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Command-Deck shell: static top nav + sidebar/map-stage split below it,
+   replacing the old "floating panels over full-bleed map" arrangement.
+   This mirrors the landing page's structured, card-based composition
+   instead of a HUD-overlay approach -- clearer hierarchy, no more
+   controls stacked on top of the map surface itself. */
+body.dashboard-shell {
+  display: flex;
+  flex-direction: column;
+}
+
 /* ================= HUD PANEL UTILITY (tactical corner brackets) =================
    Applied to header/filter/timeline/legend/drawers/modal to give every floating
    panel a "mission control" bracketed-viewfinder identity consistent across the
@@ -108,40 +118,83 @@ body.clean-dark::before {
   mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 0%, transparent 75%);
 }
 
-/* ================= TOP NAVIGATION ================= */
-.app-header {
-  position: absolute;
-  top: 14px;
-  left: 16px;
-  right: 16px;
-  height: 58px;
-  background: var(--bg-surface);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border-subtle);
-  border-top: 1px solid rgba(56, 189, 248, 0.3);
-  border-radius: var(--radius-lg);
+/* ================= TOP NAVIGATION (matches landing-page nav language) ================= */
+.dash-nav {
+  position: relative;
+  z-index: 1000;
+  flex-shrink: 0;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px;
-  z-index: 1000;
-  box-shadow: var(--glass-shadow);
+  gap: 18px;
+  padding: 0 22px;
+  background: rgba(5, 7, 13, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.header-left, .header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-badge {
+.dash-brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-right: 4px;
-  border-right: 1px solid var(--border-subtle);
-  margin-right: 6px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.dash-nav-mid {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  justify-content: center;
+}
+
+.dash-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-ghost-dash {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-family: var(--font-main);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+.btn-ghost-dash:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+  border-color: var(--border-strong);
+}
+
+.btn-primary-dash {
+  background: var(--grad-accent);
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-family: var(--font-main);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px -2px rgba(56, 189, 248, 0.45);
+}
+.btn-primary-dash:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px -2px rgba(56, 189, 248, 0.6);
 }
 
 .brand-icon {
@@ -349,11 +402,99 @@ body.clean-dark::before {
   color: var(--text-muted);
 }
 
-/* ================= MAP CANVAS ================= */
-.map-viewport {
-  width: 100vw;
-  height: 100vh;
+/* ================= COMMAND-DECK BODY: SIDEBAR + MAP STAGE ================= */
+.dash-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+  gap: 16px;
+}
+
+/* ---- Left control sidebar: every control that used to float on top of
+   the map (region, layers, timeline, legend, status) now lives here in a
+   fixed, always-visible column. Nothing overlaps the map surface anymore. */
+.control-sidebar {
+  width: 296px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.control-sidebar::-webkit-scrollbar { width: 4px; }
+.control-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+.side-card {
+  background: var(--bg-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px 16px;
+  box-shadow: var(--glass-shadow);
+  flex-shrink: 0;
+}
+
+.side-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.side-card-head .legend-live-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+.full-width { width: 100%; }
+
+/* Sidebar hazard-layer list (vertical stack, replaces the old horizontal
+   floating pill bar that used to sit on top of the map) */
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.system-status-card {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+/* ---- Map stage: bounded, card-framed viewport (no longer 100vw/100vh
+   full-bleed). Reads as a deliberate "instrument panel" composition
+   consistent with the landing page's card-based sections. */
+.map-stage {
+  flex: 1;
   position: relative;
+  min-width: 0;
+  display: flex;
+}
+
+.map-card {
+  flex: 1;
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-top: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: var(--glass-shadow);
 }
 
 .gis-map {
@@ -391,6 +532,16 @@ body.clean-dark::before {
   background: rgba(56, 189, 248, 0.18) !important;
 }
 
+/* Calibrated risk raster overlay (canvas-rendered per-render, painted from
+   the true per-cell grid values -- see renderMapGrid() in app.js). A light
+   blur softens the bilinear-upsampled pixels into a smooth gradient look
+   without any additive blending that could inflate the displayed severity. */
+.risk-raster-layer {
+  filter: blur(3px);
+  mix-blend-mode: normal;
+  pointer-events: none;
+}
+
 /* Radar-style pulse ring drawn around Critical-severity map points (added via JS) */
 .risk-pulse-ring {
   animation: riskPulseRing 1.8s ease-out infinite;
@@ -400,48 +551,41 @@ body.clean-dark::before {
   100% { stroke-opacity: 0; }
 }
 
-/* ================= FLOATING HAZARD LAYER BAR ================= */
-.hazard-filter-bar {
-  position: absolute;
-  top: 86px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 6px;
-  background: var(--bg-surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 5px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--glass-shadow);
-  z-index: 1000;
-}
-
+/* ================= HAZARD LAYER LIST (sidebar) ================= */
 .filter-pill {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text-muted);
-  border: none;
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  font-size: 0.78rem;
+  border: 1px solid transparent;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
   font-family: var(--font-main);
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 9px;
   cursor: pointer;
   transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.filter-pill .pill-label em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--text-dim);
+  font-size: 0.72rem;
 }
 
 .filter-pill:hover {
   color: var(--text-main);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .filter-pill.active {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
+  border-color: var(--border-subtle);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
@@ -451,28 +595,10 @@ body.clean-dark::before {
 .filter-pill[data-layer="thunderstorm"].active { box-shadow: 0 0 0 1px rgba(99,102,241,0.45), 0 4px 14px -2px rgba(99,102,241,0.4); }
 .filter-pill[data-layer="iwv"].active { box-shadow: 0 0 0 1px rgba(56,189,248,0.4), 0 4px 14px -2px rgba(56,189,248,0.4); }
 
-/* ================= FLOATING TIMELINE WIDGET ================= */
-.timeline-bar {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-surface);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 10px 18px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: var(--glass-shadow);
-  z-index: 1000;
-}
-
+/* ================= TIMELINE WIDGET (sidebar) ================= */
 .play-btn {
-  width: 38px;
-  height: 38px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--grad-accent);
   color: white;
@@ -483,51 +609,34 @@ body.clean-dark::before {
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 0 0 1px rgba(56,189,248,0.3), 0 4px 16px -2px rgba(56,189,248,0.45);
+  flex-shrink: 0;
 }
 
 .play-btn:hover {
   transform: scale(1.07);
 }
 
-.timeline-slider-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.timeline-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.timeline-caption {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-dim);
-}
-
 .lead-active-text {
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   font-family: var(--font-mono);
   font-weight: 600;
   color: #38bdf8;
+  margin-bottom: 12px;
+  display: block;
 }
 
 /* Connected progress track behind the lead-time step buttons */
 .lead-step-buttons {
   position: relative;
   display: flex;
-  gap: 6px;
+  gap: 5px;
 }
 
 .lead-track-line {
   position: absolute;
   top: 50%;
-  left: 20px;
-  right: 20px;
+  left: 14px;
+  right: 14px;
   height: 2px;
   background: rgba(255, 255, 255, 0.08);
   transform: translateY(-50%);
@@ -546,16 +655,18 @@ body.clean-dark::before {
 .step-btn {
   position: relative;
   z-index: 1;
+  flex: 1;
   background: rgba(11, 15, 26, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text-muted);
-  padding: 5px 12px;
+  padding: 6px 4px;
   border-radius: var(--radius-md);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-family: var(--font-mono);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-align: center;
 }
 
 .step-btn:hover {
@@ -570,40 +681,7 @@ body.clean-dark::before {
   box-shadow: 0 0 14px -2px rgba(56, 189, 248, 0.6);
 }
 
-/* ================= RISK METER LEGEND (gradient scale) ================= */
-.minimal-legend {
-  position: absolute;
-  bottom: 24px;
-  left: 20px;
-  background: var(--bg-surface);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
-  padding: 10px 16px 12px;
-  border-radius: var(--radius-md);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 1000;
-  width: 230px;
-}
-
-.legend-head {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-dim);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.legend-head .legend-live-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 6px var(--accent);
-}
-
+/* ================= RISK METER LEGEND (gradient scale, sidebar card) ================= */
 .risk-meter-track {
   height: 7px;
   border-radius: var(--radius-full);
@@ -640,69 +718,53 @@ body.clean-dark::before {
 .dot-high { background: var(--color-high); }
 .dot-crit { background: var(--color-critical); }
 
-/* Hint Banner */
+/* Hint Banner (floats inside the bounded map card, top-center) */
 .map-hint-banner {
   position: absolute;
-  top: 144px;
-  right: 20px;
-  max-width: 340px;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 380px;
   background: var(--bg-surface);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
-  padding: 8px 14px;
+  padding: 8px 16px;
   border-radius: var(--radius-full);
   font-size: 0.76rem;
   color: var(--text-muted);
-  z-index: 1000;
+  z-index: 500;
   pointer-events: none;
+  text-align: center;
+  box-shadow: var(--glass-shadow);
 }
 
-/* ================= SYSTEM STATUS CHIP (bottom-right, authority signal) ================= */
-.system-status-chip {
-  position: absolute;
-  bottom: 24px;
-  right: 20px;
-  background: var(--bg-surface);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 9px 14px;
-  z-index: 999;
-  font-size: 0.68rem;
-  color: var(--text-dim);
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  font-family: var(--font-mono);
-  line-height: 1.5;
-  pointer-events: none;
-}
-
-.system-status-chip .sys-row {
+/* ================= SYSTEM STATUS CARD (sidebar, authority signal) ================= */
+.sys-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
 }
 
-.system-status-chip .sys-label {
+.sys-label {
   color: var(--text-dim);
 }
 
-.system-status-chip .sys-value {
+.sys-value {
   color: var(--text-muted);
   font-weight: 600;
 }
 
-.system-status-chip .sys-ok {
+.sys-ok {
   color: #34d399;
   font-weight: 700;
 }
 
-/* ================= SLIDE-OVER DRAWERS ================= */
+/* ================= SLIDE-OVER DRAWERS (anchored inside the map stage) ================= */
 .slide-drawer {
   position: absolute;
-  top: 86px;
-  bottom: 24px;
+  top: 0;
+  bottom: 0;
   width: 390px;
   background: var(--bg-surface-2);
   backdrop-filter: blur(28px);
@@ -1172,10 +1234,17 @@ body.clean-dark::before {
 }
 
 /* ================= RESPONSIVE ================= */
+@media (max-width: 1180px) {
+  .dash-nav-mid { display: none; }
+}
+
 @media (max-width: 980px) {
-  .app-header { flex-wrap: wrap; height: auto; padding: 10px 14px; gap: 8px; }
-  .header-right { flex-wrap: wrap; }
-  .hazard-filter-bar { flex-wrap: wrap; max-width: 92vw; justify-content: center; top: 118px; }
+  body.dashboard-shell { height: auto; overflow: auto; }
+  .dash-nav { flex-wrap: wrap; height: auto; padding: 10px 14px; gap: 8px; }
+  .dash-nav-actions { flex-wrap: wrap; }
+  .dash-body { flex-direction: column; height: auto; overflow: visible; padding: 12px; }
+  .control-sidebar { width: 100%; max-height: none; overflow: visible; flex-direction: row; flex-wrap: wrap; }
+  .side-card { flex: 1 1 260px; }
+  .map-stage { min-height: 520px; }
   .slide-drawer { width: 92vw; }
-  .system-status-chip { display: none; }
 }

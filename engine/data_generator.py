@@ -61,6 +61,14 @@ class AtmosphericDataGenerator:
     def set_region(self, region_key: str):
         if region_key in MONITORED_REGIONS:
             self.active_region_key = region_key
+            # Switching sectors must drop any manually-injected demo scenario
+            # (e.g. "cloudburst_himalayan") back to live real-world data.
+            # Without this, a single "Simulate Cloudburst" click would leave
+            # every other sector permanently showing the dramatic override
+            # too -- reintroducing the exact "always critical" credibility
+            # problem the live-data calibration fix was meant to solve.
+            self.active_scenario = MONITORED_REGIONS[region_key].get("default_scenario", "live_realtime")
+            self.active_mode = self.active_scenario
             self.scenario_start_time = time.time()
 
     def set_scenario(self, scenario_name: str):
@@ -260,7 +268,16 @@ class AtmosphericDataGenerator:
         drift = 0.06 * np.sin(now_epoch / 900.0 + hash(self.active_region_key) % 7)
         activity_factor = float(np.clip(0.06 + atmospheric_readiness * 0.55 + drift, 0.04, 0.78))
 
-        if self.active_scenario == "cloudburst_himalayan":
+        # Injected DEMO scenario auto-expires after a few minutes so a single
+        # "Simulate Cloudburst" click behaves like a real transient event
+        # rather than a permanent stuck-on alarm -- once it expires we fall
+        # straight back to the calibrated live feed automatically.
+        demo_scenario_age_sec = now_epoch - self.scenario_start_time
+        demo_scenario_active = (
+            self.active_scenario == "cloudburst_himalayan" and demo_scenario_age_sec < 180
+        )
+
+        if demo_scenario_active:
             # Injected high-intensity cloudburst DEMO scenario (manually
             # triggered) — intentionally overrides calibration to showcase
             # the full alerting pipeline for demonstration purposes.
@@ -269,6 +286,11 @@ class AtmosphericDataGenerator:
                 convective_core_shape,
                 np.exp(-((X - 0.2)**2 + (Y + 0.1)**2) / 0.25)
             )
+        elif self.active_scenario == "cloudburst_himalayan":
+            # Expired demo -- silently fall back to live mode bookkeeping so
+            # subsequent requests skip the age check entirely.
+            self.active_scenario = "live_realtime"
+            self.active_mode = "live_realtime"
 
         convective_core = convective_core_shape * activity_factor
 
