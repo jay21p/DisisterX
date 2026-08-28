@@ -1,235 +1,400 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DisasterX — AI Hyper-Local Severe Weather Nowcasting</title>
-  
-  <!-- Modern Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  
-  <!-- Favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DisasterX — AI Early Warning for Cloudbursts, Flash Floods & Severe Storms</title>
+<meta name="description" content="DisasterX gives 2–6 hour advance warning of cloudbursts, flash floods and severe thunderstorms using satellite AI — enough time to evacuate before disaster strikes.">
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  
-  <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="/static/style.css">
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="/static/assets/logo-512.png">
+
+<link rel="stylesheet" href="/static/landing.css">
 </head>
-<body class="clean-dark">
+<body class="landing">
 
-  <!-- ================= TOP NAVIGATION BAR ================= -->
-  <header class="app-header">
-    <div class="header-left">
-      <div class="brand-badge">
-        <span class="brand-icon">⚡</span>
-        <span class="brand-name">Disaster<strong>X</strong></span>
-        <span class="brand-pill">AI NOWCAST (2–6h)</span>
+<!-- ================= NAVBAR ================= -->
+<nav class="nav" id="mainNav">
+  <a href="#top" class="nav-brand">
+    <img src="/static/assets/logo-512.png" alt="DisasterX logo">
+    <span class="nav-brand-text">Disaster<strong>X</strong></span>
+  </a>
+  <div class="nav-links">
+    <a href="#threat">The Threat</a>
+    <a href="#solution">How It Works</a>
+    <a href="#regions">Sectors Covered</a>
+    <a href="#trust">Technology</a>
+  </div>
+  <div class="nav-cta">
+    <a href="/docs" target="_blank" class="btn-ghost btn" style="padding:9px 18px;font-size:0.82rem;">API Docs</a>
+    <a href="/dashboard" class="btn-primary btn sm">Launch Live Dashboard →</a>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero" id="top">
+  <div class="hero-bg">
+    <img src="/static/assets/hero-storm.jpg" alt="Storm approaching Himalayan valley">
+  </div>
+
+  <div class="container">
+    <div class="hero-content reveal in-view">
+      <div class="live-alert-strip" id="heroAlertStrip">
+        <span class="pulse-dot" id="heroAlertDot"></span>
+        <span id="heroAlertCount">Scanning 4 Indian sectors in real time…</span>
       </div>
 
-      <!-- Region Selector -->
-      <div class="region-select-wrap">
-        <label for="regionSelect" class="sr-only">Sector:</label>
-        <select id="regionSelect" class="region-select">
-          <option value="uttarakhand" selected>📍 Western Himalayas (Uttarakhand / HP)</option>
-          <option value="mumbai_konkan">📍 Western Ghats & Coastal Mumbai</option>
-          <option value="northeast_assam">📍 Northeast (Meghalaya & Assam)</option>
-          <option value="kerala_ghats">📍 Southern Western Ghats (Kerala)</option>
-        </select>
-      </div>
-    </div>
+      <h1>Know a disaster is coming<br><span class="accent-text">2 to 6 hours</span> before it hits.</h1>
 
-    <div class="header-right">
-      <!-- Live Telemetry Status Pill -->
-      <div class="telemetry-pill" title="Live INSAT-3D/3DR Satellite + IMDAA Baseline Active">
-        <span class="live-pulse"></span>
-        <span class="telemetry-text">INSAT & IMDAA Real-Time Link</span>
+      <p class="hero-sub">
+        Cloudbursts and flash floods give almost no warning — by the time the rain starts, it's often too late to evacuate.
+        <strong>DisasterX</strong> fuses live satellite moisture data, atmospheric energy readings, and terrain models with a multi-task AI engine to flag danger <strong>hours before conventional forecasts can</strong>.
+      </p>
+
+      <div class="hero-actions">
+        <a href="/dashboard" class="btn btn-primary">🛰️ Open Live Nowcasting Map</a>
+        <a href="#threat" class="btn btn-ghost">See Why This Matters ↓</a>
       </div>
 
-      <!-- Live Clock -->
-      <div class="clock-badge">
-        <span id="liveClock" class="clock-text">--:--:-- IST</span>
-      </div>
-
-      <!-- How It Works Guide Button -->
-      <button id="btnOpenGuide" class="btn-secondary" title="View Quick User Guide">
-        <span>📖 How to Use</span>
-      </button>
-
-      <!-- Swagger API Docs Button -->
-      <a href="/docs" target="_blank" class="btn-secondary" title="Open Interactive Swagger REST API Explorer" style="text-decoration: none;">
-        <span>⚡ API Docs</span>
-      </a>
-
-      <!-- Simulation Trigger -->
-      <button id="btnQuickSim" class="btn-primary" title="Trigger a live simulated cloudburst event">
-        <span>⚡ Simulate Cloudburst</span>
-      </button>
-
-      <!-- Active Warnings Drawer Toggle -->
-      <button id="btnToggleAlerts" class="btn-alert-badge" title="View Active Warnings">
-        <span>🔔 Warnings</span>
-        <span id="alertCountBadge" class="badge-count">0</span>
-      </button>
-    </div>
-  </header>
-
-  <!-- ================= MAIN MAP WORKSPACE ================= -->
-  <main class="map-viewport">
-    <div id="gisMap" class="gis-map"></div>
-
-    <!-- FLOATING HAZARD LAYER SELECTOR (Top Center) -->
-    <div class="hazard-filter-bar">
-      <button class="filter-pill active" data-layer="composite">
-        <span class="pill-icon">🛡️</span> Composite Risk
-      </button>
-      <button class="filter-pill" data-layer="cloudburst">
-        <span class="pill-icon">🌧️</span> Cloudburst (IWV+CTT)
-      </button>
-      <button class="filter-pill" data-layer="flashflood">
-        <span class="pill-icon">🌊</span> Flash Flood (DEM)
-      </button>
-      <button class="filter-pill" data-layer="thunderstorm">
-        <span class="pill-icon">🌩️</span> Thunderstorm (CAPE)
-      </button>
-      <button class="filter-pill" data-layer="iwv">
-        <span class="pill-icon">💧</span> Moisture Fuel (IWV)
-      </button>
-    </div>
-
-    <!-- FLOATING TIMELINE SCRUBBER (Bottom Center) -->
-    <div class="timeline-bar">
-      <button id="btnPlayTimeline" class="play-btn" title="Play 2h-6h Storm Evolution">
-        <svg id="playIcon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-          <path d="M8 5v14l11-7z"/>
-        </svg>
-      </button>
-
-      <div class="timeline-slider-wrap">
-        <div class="timeline-header">
-          <span class="timeline-caption">Actionable Lead Time</span>
-          <span id="activeLeadIndicator" class="lead-active-text">Lead Impact: +2 Hours</span>
+      <div class="hero-stats">
+        <div class="hero-stat-item">
+          <div class="hero-stat-value">2<span class="unit">–6h</span></div>
+          <div class="hero-stat-label">Actionable Lead Time</div>
         </div>
-        <div class="lead-step-buttons">
-          <button class="step-btn active" data-lead="2.0">+2h (Onset)</button>
-          <button class="step-btn" data-lead="3.0">+3h (Peak)</button>
-          <button class="step-btn" data-lead="4.0">+4h</button>
-          <button class="step-btn" data-lead="5.0">+5h</button>
-          <button class="step-btn" data-lead="6.0">+6h (Outflow)</button>
+        <div class="hero-stat-item">
+          <div class="hero-stat-value">4<span class="unit">sectors</span></div>
+          <div class="hero-stat-label">High-Risk Zones Monitored</div>
         </div>
-      </div>
-    </div>
-
-    <!-- RISK SEVERITY LEGEND (Bottom Left) -->
-    <div class="minimal-legend">
-      <div class="legend-head">Risk Scale</div>
-      <div class="legend-items">
-        <span class="leg-tag"><span class="dot dot-normal"></span> Normal</span>
-        <span class="leg-tag"><span class="dot dot-mod"></span> Moderate (>30%)</span>
-        <span class="leg-tag"><span class="dot dot-high"></span> High (>50%)</span>
-        <span class="leg-tag"><span class="dot dot-crit"></span> Critical (>75%)</span>
-      </div>
-    </div>
-
-    <!-- MAP INTERACTION HINT -->
-    <div id="mapClickPrompt" class="map-hint-banner">
-      <span>💡 <strong>Click any map hotspot</strong> to view Explainable AI (XAI) atmospheric precursors.</span>
-    </div>
-  </main>
-
-  <!-- ================= WARNINGS DRAWER (Slide-Over from Left) ================= -->
-  <aside id="alertsDrawer" class="slide-drawer drawer-left">
-    <div class="drawer-header">
-      <div>
-        <h3>Active Early Warnings</h3>
-        <p class="drawer-subtitle">Categorized lead-time alerts for disaster response</p>
-      </div>
-      <button id="btnCloseAlerts" class="btn-close" title="Close Drawer">✕</button>
-    </div>
-
-    <div class="drawer-body" id="alertsList">
-      <div class="drawer-empty">Scanning for threshold breaches...</div>
-    </div>
-  </aside>
-
-  <!-- ================= XAI PRECURSOR INSPECTOR (Slide-Over from Right) ================= -->
-  <aside id="xaiDrawer" class="slide-drawer drawer-right">
-    <div class="drawer-header">
-      <div>
-        <h3>Explainable AI (XAI) Diagnostics</h3>
-        <p id="xaiCoordText" class="drawer-subtitle">Select a point on the map</p>
-      </div>
-      <button id="btnCloseXai" class="btn-close" title="Close Panel">✕</button>
-    </div>
-
-    <div class="drawer-body" id="xaiBody">
-      <!-- Filled dynamically on click -->
-    </div>
-  </aside>
-
-  <!-- ================= USER GUIDE MODAL (How to Use) ================= -->
-  <div id="guideModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title">
-          <span class="modal-icon">📖</span>
-          <h3>How DisasterX Works & User Guide</h3>
+        <div class="hero-stat-item">
+          <div class="hero-stat-value"><span id="heroLiveAlerts">–</span></div>
+          <div class="hero-stat-label">Active Warnings Right Now</div>
         </div>
-        <button id="btnCloseGuide" class="btn-close">✕</button>
-      </div>
-
-      <div class="modal-body">
-        <div class="guide-section">
-          <h4>1. The Core Objective</h4>
-          <p>DisasterX is an AI Early Warning engine that predicts <strong>Cloudbursts, Severe Thunderstorms, and Flash Floods 2 to 6 hours before impact</strong>, bypassing traditional weather simulation delays.</p>
-        </div>
-
-        <div class="guide-section">
-          <h4>2. The 4 Key Atmospheric Precursors</h4>
-          <div class="guide-grid">
-            <div class="guide-item">
-              <span class="g-title">💧 Integrated Water Vapor (IWV)</span>
-              <p>The Fuel: Sensed by INSAT-3DR satellite. Rapid surges above <strong>60 kg/m²</strong> indicate explosive moisture pooling for cloudbursts.</p>
-            </div>
-            <div class="guide-item">
-              <span class="g-title">⚡ CAPE / Instability</span>
-              <p>The Energy: Convective Available Potential Energy from IMDAA. Values above <strong>2500 J/kg</strong> indicate severe thunderstorm energy.</p>
-            </div>
-            <div class="guide-item">
-              <span class="g-title">🌪️ Cloud Top Cooling Rate</span>
-              <p>The Trigger: Thermal IR drop rate. Rapid cooling <strong>> 12 K/hr</strong> confirms explosive vertical updrafts inside the storm.</p>
-            </div>
-            <div class="guide-item">
-              <span class="g-title">⛰️ DEM Topographic Drainage</span>
-              <p>The Flood Catalyst: High-resolution slope and river catchments calculate where cloudburst rain will funnel into flash floods.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="guide-section">
-          <h4>3. How to Interact with the Dashboard</h4>
-          <ul class="guide-list">
-            <li><strong>Timeline Controller (Bottom)</strong>: Click <code>+2h</code>, <code>+3h</code>, <code>+4h</code>, <code>+5h</code>, <code>+6h</code> or press <strong>▶ Play</strong> to watch how the risk evolves in time.</li>
-            <li><strong>Layer Switcher (Top)</strong>: Filter by <em>Cloudburst</em>, <em>Flash Flood</em>, <em>Thunderstorm</em>, or <em>Moisture Fuel (IWV)</em>.</li>
-            <li><strong>Click Any Map Point</strong>: Opens the <strong>XAI Diagnostics</strong> panel showing the exact % breakdown of why an alert was triggered.</li>
-            <li><strong>Warnings Button (🔔)</strong>: View categorized emergency advisories for SDRF/NDRF teams.</li>
-            <li><strong>Test Simulation (⚡)</strong>: Injects an instant localized convective storm scenario for live demonstration.</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button id="btnGotIt" class="btn-primary">Got it, Let's Explore!</button>
       </div>
     </div>
   </div>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- Main App JS -->
-  <script src="/static/app.js"></script>
+  <!-- Floating live HUD card -->
+  <div class="hero-hud">
+    <div class="hud-card">
+      <div class="hud-head">
+        <span>Live Precursor Feed</span>
+        <span class="hud-live-tag"><span class="pulse-dot"></span> LIVE</span>
+      </div>
+      <div class="hud-row"><span class="label">💧 Moisture (IWV)</span><span class="value" id="hudIwv">– kg/m²</span></div>
+      <div class="hud-row"><span class="label">⚡ Instability (CAPE)</span><span class="value" id="hudCape">– J/kg</span></div>
+      <div class="hud-row"><span class="label">🌪️ Cloud Cooling Rate</span><span class="value" id="hudCtt">– K/hr</span></div>
+      <div class="hud-row"><span class="label">🛡️ Composite Risk</span><span class="value val-crit" id="hudRisk">–%</span></div>
+      <div class="hud-mini-bar"><div class="hud-mini-fill" id="hudRiskBar"></div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= TECH CREDIBILITY STRIP ================= -->
+<div class="tech-strip">
+  <div class="container tech-strip-inner">
+    <span class="tech-item">🛰️ INSAT‑3D / 3DR</span>
+    <span class="dot-sep"></span>
+    <span class="tech-item">📡 IMDAA Reanalysis</span>
+    <span class="dot-sep"></span>
+    <span class="tech-item">⛰️ ISRO CartoDEM / SRTM</span>
+    <span class="dot-sep"></span>
+    <span class="tech-item">🌦️ Open‑Meteo / ECMWF Live</span>
+    <span class="dot-sep"></span>
+    <span class="tech-item">🧠 Spatiotemporal MTL Engine</span>
+  </div>
+</div>
+
+<!-- ================= THREAT / PROBLEM SECTION ================= -->
+<section class="section threat-section" id="threat">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-label danger">⚠ The Problem</span>
+      <h2>India's mountains and coasts lose lives to storms that strike without warning.</h2>
+      <p>Traditional weather models take hours to compute and forecast at 10–25 km resolution — far too coarse and far too slow to catch a cloudburst forming over a single valley. The result is a warning gap that costs lives every monsoon.</p>
+    </div>
+
+    <div class="threat-grid reveal">
+      <div class="threat-card">
+        <div class="threat-icon">🌧️</div>
+        <div class="threat-stat">1,600<span class="unit">+</span></div>
+        <div class="threat-label">Lives lost to floods annually</div>
+        <div class="threat-desc">Average yearly flood fatalities across India, per NDMA records — largely from fast-onset flash events.</div>
+      </div>
+      <div class="threat-card">
+        <div class="threat-icon">💰</div>
+        <div class="threat-stat">₹30,000<span class="unit">cr</span></div>
+        <div class="threat-label">Annual Himalayan disaster losses</div>
+        <div class="threat-desc">Estimated yearly economic damage from floods and landslides in the Himalayan states (NDMA).</div>
+      </div>
+      <div class="threat-card">
+        <div class="threat-icon">👥</div>
+        <div class="threat-stat">53<span class="unit">million</span></div>
+        <div class="threat-label">People in high-risk zones</div>
+        <div class="threat-desc">Population living inside Himalayan cloudburst and flash-flood danger corridors (MoEFCC).</div>
+      </div>
+      <div class="threat-card">
+        <div class="threat-icon">⏱️</div>
+        <div class="threat-stat">&lt;1<span class="unit">hr</span></div>
+        <div class="threat-label">Typical warning time today</div>
+        <div class="threat-desc">Conventional NWP-based alerts often arrive after rainfall has already begun — too late to evacuate.</div>
+      </div>
+    </div>
+
+    <div class="threat-source-note reveal">Sources: National Disaster Management Authority (NDMA), Ministry of Environment, Forest & Climate Change (MoEFCC), India Meteorological Department (IMD).</div>
+
+    <div class="latency-compare reveal">
+      <div class="latency-row">
+        <div class="latency-row-head"><span>🐢 Traditional Numerical Weather Prediction</span><span style="color:var(--text-3)">~4–8 hr compute + coarse grid</span></div>
+        <div class="latency-track"><div class="latency-fill slow">LATE — RAIN ALREADY FALLING</div></div>
+      </div>
+      <div class="latency-row">
+        <div class="latency-row-head"><span>⚡ DisasterX Spatiotemporal AI Nowcasting</span><span style="color:var(--accent)">2–6 hr advance lead time</span></div>
+        <div class="latency-track"><div class="latency-fill fast">EARLY</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SOLUTION SECTION ================= -->
+<section class="section solution-section" id="solution">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-label">✓ The DisasterX Solution</span>
+      <h2>One AI model. Four atmospheric signals. Hours of extra warning.</h2>
+      <p>DisasterX ingests live satellite, reanalysis and terrain data onto a unified spatiotemporal grid, then runs it through a multi-task deep learning engine with dedicated prediction heads for each hazard type.</p>
+    </div>
+
+    <div class="feature-showcase reveal">
+      <div class="fs-media">
+        <img src="/static/assets/ai-radar.jpg" alt="AI radar visualization of storm risk over terrain">
+      </div>
+      <div class="fs-text">
+        <span class="fs-tag">🧠 Multi-Task Deep Learning</span>
+        <h3>Three hazards, predicted simultaneously — not in isolation.</h3>
+        <p>A shared spatiotemporal cross-attention backbone learns the relationships between moisture, energy, and terrain, then feeds three specialized output heads that each predict a different hazard at once, at every grid cell, every few minutes.</p>
+        <div class="fs-list">
+          <div class="fs-list-item"><span class="check">✓</span><span><strong>Cloudburst Head</strong> — flags explosive moisture pooling before rain intensifies.</span></div>
+          <div class="fs-list-item"><span class="check">✓</span><span><strong>Flash Flood Head</strong> — fuses rainfall potential with slope & drainage to predict where water will funnel.</span></div>
+          <div class="fs-list-item"><span class="check">✓</span><span><strong>Severe Thunderstorm Head</strong> — tracks instability energy and wind shear for lightning & squall risk.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-showcase reverse reveal">
+      <div class="fs-media">
+        <img src="/static/assets/hero-storm.jpg" alt="Storm forming over mountain terrain">
+      </div>
+      <div class="fs-text">
+        <span class="fs-tag">🔍 Explainable AI (XAI)</span>
+        <h3>Never a black-box alert. Every warning shows its evidence.</h3>
+        <p>Emergency responders can't act on a number alone — they need to know why. Click any point on the live map and DisasterX breaks down the exact percentage contribution of each atmospheric precursor driving that risk score, in plain language.</p>
+        <div class="fs-list">
+          <div class="fs-list-item"><span class="check">✓</span><span>Live sensor readings for IWV, CAPE, cloud-top cooling rate, and terrain slope at any coordinate.</span></div>
+          <div class="fs-list-item"><span class="check">✓</span><span>Auto-generated plain-language explanation of the dominant driving factor.</span></div>
+          <div class="fs-list-item"><span class="check">✓</span><span>Actionable SOP advisories for SDRF / NDRF field teams — not just raw probabilities.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 Pillars -->
+    <div class="section-head reveal" style="margin-top:20px;">
+      <span class="section-label">The 4 Atmospheric Precursors</span>
+      <h2 style="font-size:1.7rem;">The physical signals DisasterX watches, second by second.</h2>
+    </div>
+    <div class="pillar-grid reveal">
+      <div class="pillar-card">
+        <div class="pillar-num">01</div>
+        <div class="pillar-icon">💧</div>
+        <div class="pillar-title">Moisture Fuel (IWV)</div>
+        <div class="pillar-desc">Integrated Water Vapor from INSAT‑3DR. Rapid surges above 60 kg/m² signal explosive moisture pooling — the fuel for a cloudburst.</div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-num">02</div>
+        <div class="pillar-icon">⚡</div>
+        <div class="pillar-title">Instability & Energy</div>
+        <div class="pillar-desc">CAPE surge and CIN erosion from IMDAA baselines. Values above 2,500 J/kg indicate severe thunderstorm energy is loaded.</div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-num">03</div>
+        <div class="pillar-icon">🌪️</div>
+        <div class="pillar-title">Kinematics & Updrafts</div>
+        <div class="pillar-desc">Explosive Cloud Top Temperature drop rate and low-level wind convergence — the trigger that confirms a violent updraft is forming.</div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-num">04</div>
+        <div class="pillar-icon">⛰️</div>
+        <div class="pillar-title">Topographic Catalyst</div>
+        <div class="pillar-desc">Fuses cloudburst vectors with CartoDEM/SRTM slope & river-basin runoff routing to predict exactly where flash floods will strike.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS / PROCESS ================= -->
+<section class="section process-section">
+  <div class="container">
+    <div class="section-head center reveal">
+      <span class="section-label">From Raw Data to Actionable Warning</span>
+      <h2>How a warning reaches the ground in minutes.</h2>
+      <p class="center">A continuous four-stage pipeline — running every few minutes, every day, across every monitored sector.</p>
+    </div>
+
+    <div class="process-steps reveal">
+      <div class="process-step">
+        <div class="process-num">01</div>
+        <h4>Ingest Live Data</h4>
+        <p>Satellite moisture channels, reanalysis thermodynamics, and live ground observations are pulled and fused onto a unified spatial grid.</p>
+      </div>
+      <div class="process-step">
+        <div class="process-num">02</div>
+        <h4>Run the MTL Engine</h4>
+        <p>The spatiotemporal multi-task model scores every grid cell for cloudburst, flash flood, and thunderstorm probability, out to a 6-hour horizon.</p>
+      </div>
+      <div class="process-step">
+        <div class="process-num">03</div>
+        <h4>Explain the Risk</h4>
+        <p>Threshold breaches trigger the XAI engine, which attributes the exact precursor mix behind each alert in human-readable form.</p>
+      </div>
+      <div class="process-step">
+        <div class="process-num">04</div>
+        <h4>Dispatch the Alert</h4>
+        <p>Categorized warnings with action advisories are pushed to the live map, mesh-network mobile clients, and responder webhooks.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= REGIONS / SOCIAL PROOF ================= -->
+<section class="section regions-section" id="regions">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-label">📍 Coverage</span>
+      <h2>Watching India's four most vulnerable disaster corridors.</h2>
+      <p>Each sector runs its own live model, calibrated to its specific terrain and monsoon dynamics.</p>
+    </div>
+
+    <div class="regions-grid reveal" id="regionsGrid">
+      <!-- Populated by JS with live risk data, static fallback below -->
+      <div class="region-card">
+        <div class="region-card-head"><span class="region-name">Western Himalayas</span><span class="region-status-live"><span class="pulse-dot"></span>Live</span></div>
+        <div class="region-desc">Uttarakhand / Himachal — steep valleys prone to high-altitude moisture pooling, cloudbursts, and river catchment flash floods.</div>
+        <div class="region-risk-bar"><div class="region-risk-fill" style="width:0%;background:var(--accent)"></div></div>
+        <div class="region-risk-label"><span>Composite Risk</span><span>—</span></div>
+      </div>
+      <div class="region-card">
+        <div class="region-card-head"><span class="region-name">Western Ghats & Mumbai</span><span class="region-status-live"><span class="pulse-dot"></span>Live</span></div>
+        <div class="region-desc">Orographic lift meets Arabian Sea moisture surge — extreme thunderstorm bands and urban runoff flooding.</div>
+        <div class="region-risk-bar"><div class="region-risk-fill" style="width:0%;background:var(--accent)"></div></div>
+        <div class="region-risk-label"><span>Composite Risk</span><span>—</span></div>
+      </div>
+      <div class="region-card">
+        <div class="region-card-head"><span class="region-name">Northeast (Meghalaya & Assam)</span><span class="region-status-live"><span class="pulse-dot"></span>Live</span></div>
+        <div class="region-desc">Moisture funnels between the Khasi Hills, creating intense convective cells and Brahmaputra tributary surges.</div>
+        <div class="region-risk-bar"><div class="region-risk-fill" style="width:0%;background:var(--accent)"></div></div>
+        <div class="region-risk-label"><span>Composite Risk</span><span>—</span></div>
+      </div>
+      <div class="region-card">
+        <div class="region-card-head"><span class="region-name">Southern Western Ghats (Kerala)</span><span class="region-status-live"><span class="pulse-dot"></span>Live</span></div>
+        <div class="region-desc">High slope gradient with concentrated moisture influx — a corridor for landslide and flash-flood triggers.</div>
+        <div class="region-risk-bar"><div class="region-risk-fill" style="width:0%;background:var(--accent)"></div></div>
+        <div class="region-risk-label"><span>Composite Risk</span><span>—</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TECH TRUST SECTION ================= -->
+<section class="section" id="trust" style="background:var(--bg-panel); padding-top:90px; padding-bottom:90px;">
+  <div class="container">
+    <div class="section-head center reveal">
+      <span class="section-label">🔬 Built on Real Meteorological Science</span>
+      <h2>Not a black box — a transparent, auditable pipeline.</h2>
+      <p class="center">Every prediction can be traced back to a physical atmospheric signal, sourced from operational meteorological infrastructure.</p>
+    </div>
+
+    <div class="pillar-grid reveal">
+      <div class="pillar-card">
+        <div class="pillar-icon">🛰️</div>
+        <div class="pillar-title">Satellite Sensing</div>
+        <div class="pillar-desc">INSAT‑3D/3DR water-vapor and thermal-IR channels feed real-time moisture and cloud-top cooling readings.</div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon">📊</div>
+        <div class="pillar-title">Reanalysis Baselines</div>
+        <div class="pillar-desc">IMDAA 12km fields and Open-Meteo/ECMWF live data ground the model in verified thermodynamic conditions.</div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon">⛰️</div>
+        <div class="pillar-title">Terrain Intelligence</div>
+        <div class="pillar-desc">ISRO CartoDEM & SRTM digital elevation models compute slope steepness and river basin drainage accumulation.</div>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-icon">🧠</div>
+        <div class="pillar-title">Explainable Outputs</div>
+        <div class="pillar-desc">Every alert ships with a percentage attribution breakdown — so responders trust the "why," not just the score.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FINAL CTA ================= -->
+<section class="cta-section">
+  <div class="cta-bg"></div>
+  <div class="container">
+    <div class="cta-inner reveal">
+      <h2>Every hour of warning is a life that can be saved.</h2>
+      <p>Open the live nowcasting dashboard, pick a sector, and see exactly where the next 2–6 hours of risk is building — right now.</p>
+      <div class="cta-actions">
+        <a href="/dashboard" class="btn btn-primary">🛰️ Launch Live Dashboard</a>
+        <a href="/docs" target="_blank" class="btn btn-ghost">⚡ Explore the API</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="footer-brand-name">
+          <img src="/static/assets/logo-512.png" alt="DisasterX logo">
+          <span>Disaster<strong style="color:var(--accent)">X</strong></span>
+        </div>
+        <p>AI-driven hyper-local early warning system for severe thunderstorms, cloudbursts, and flash floods — built to close India's disaster warning gap. Smart India Hackathon prototype.</p>
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h5>Product</h5>
+          <a href="/dashboard">Live Dashboard</a>
+          <a href="#solution">How It Works</a>
+          <a href="#regions">Sectors Covered</a>
+        </div>
+        <div class="footer-col">
+          <h5>Developers</h5>
+          <a href="/docs" target="_blank">Swagger API Docs</a>
+          <a href="/redoc" target="_blank">ReDoc Reference</a>
+          <a href="/api/export/geojson?lead_time=2.0" target="_blank">GeoJSON Export</a>
+        </div>
+        <div class="footer-col">
+          <h5>System</h5>
+          <a href="/api/status" target="_blank">System Status</a>
+          <a href="/api/alerts" target="_blank">Active Alerts Feed</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 DisasterX — SIH Prototype. Built for disaster response, not liability.</span>
+      <span class="footer-disclaimer">Nowcasts are AI-generated probabilistic estimates and should complement, not replace, official IMD/NDMA advisories.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/static/landing.js"></script>
 </body>
 </html>

@@ -176,8 +176,36 @@ class AtmosphericDataGenerator:
             elevation = 300 + 1500 * np.exp(-0.3 * (X**2 + Y**2)) + 400 * np.cos(3 * X)
             elevation = np.clip(elevation, 50, 2800)
 
+        # ------------------------------------------------------------------
+        # SLOPE MODEL: our 40x40 grid spans ~200-300km per region, so a raw
+        # gradient of the smooth macro-elevation surface (above) washes out
+        # to near-zero and is meaningless for local flash-flood terrain risk.
+        # Instead we model *local* terrain steepness directly as a bounded,
+        # region-calibrated function: a macro component (broad valley walls
+        # from the elevation field above, normalized) blended with localized
+        # high-frequency ridge/gorge texture. This keeps slopes within
+        # realistic physical bounds per terrain type:
+        #   Himalayas (uttarakhand): steep valley walls, ~10-42°
+        #   Western Ghats/Konkan & Kerala Ghats: moderate-to-steep, ~5-32°
+        #   Northeast hills (Assam/Meghalaya): rolling hills, ~4-24°
+        # ------------------------------------------------------------------
         gy, gx = np.gradient(elevation)
-        slope = np.arctan(np.sqrt(gx**2 + gy**2) / 50.0) * (180.0 / np.pi)
+        macro_gradient_mag = np.sqrt(gx**2 + gy**2)
+        macro_norm = macro_gradient_mag / (macro_gradient_mag.max() + 1e-6)  # 0..1
+
+        local_texture = 0.5 + 0.5 * np.sin(5.0 * X + 1.3) * np.cos(4.0 * Y - 0.7)  # 0..1
+
+        if self.active_region_key == "uttarakhand":
+            slope_min, slope_max = 6.0, 42.0
+        elif self.active_region_key == "kerala_ghats":
+            slope_min, slope_max = 4.0, 32.0
+        elif self.active_region_key == "mumbai_konkan":
+            slope_min, slope_max = 1.0, 24.0
+        else:  # northeast_assam
+            slope_min, slope_max = 2.0, 22.0
+
+        blended_steepness = np.clip(0.6 * macro_norm + 0.4 * local_texture, 0.0, 1.0)
+        slope = slope_min + blended_steepness * (slope_max - slope_min)
 
         drainage_potential = 1.0 / (1.0 + slope / 15.0)
         river_network = np.exp(-((X + 0.3 * np.sin(3 * Y))**2) / 0.08)
@@ -196,6 +224,7 @@ class AtmosphericDataGenerator:
         lat_grid, lon_grid = self.generate_grid_coordinates()
         dem = self.generate_static_dem()
         ny, nx = lat_grid.shape
+        now_epoch = time.time()
 
         # Fetch live data
         live = self.fetch_live_meteorological_data()
@@ -209,11 +238,39 @@ class AtmosphericDataGenerator:
         center_x = 0.1 + 0.25 * (lead_time_hours - 2.0)
         center_y = -0.1 + 0.15 * (lead_time_hours - 2.0)
         dist_sq = (X - center_x)**2 + (Y - center_y)**2
-        convective_core = np.exp(-dist_sq / 0.35)
+        convective_core_shape = np.exp(-dist_sq / 0.35)
+
+        # ------------------------------------------------------------------
+        # CALIBRATION: Scale the convective core's *intensity* by how
+        # atmospherically primed the live conditions actually are. Without
+        # this, the model would flag a near-maximal storm at the same grid
+        # cell 24/7 regardless of real weather — an uncalibrated "always
+        # critical" signal that destroys the credibility of the warning
+        # system. Real cloudburst/thunderstorm precursors (high IWV, high
+        # CAPE) are rare; most of the time the atmosphere is stable.
+        # ------------------------------------------------------------------
+        live_cape_raw = live["cape_jkg"]
+        live_iwv_raw = live["derived_iwv"]
+        cape_readiness = np.clip((live_cape_raw - 600.0) / 2200.0, 0.0, 1.0)
+        iwv_readiness = np.clip((live_iwv_raw - 45.0) / 35.0, 0.0, 1.0)
+        atmospheric_readiness = 0.55 * cape_readiness + 0.45 * iwv_readiness
+
+        # Gentle slow-varying temporal drift so the live map isn't static
+        # between refreshes (mimics natural minute-to-minute fluctuation).
+        drift = 0.06 * np.sin(now_epoch / 900.0 + hash(self.active_region_key) % 7)
+        activity_factor = float(np.clip(0.06 + atmospheric_readiness * 0.55 + drift, 0.04, 0.78))
 
         if self.active_scenario == "cloudburst_himalayan":
-            # Injected high-intensity cloudburst scenario
-            convective_core = np.maximum(convective_core, np.exp(-((X - 0.2)**2 + (Y + 0.1)**2) / 0.25))
+            # Injected high-intensity cloudburst DEMO scenario (manually
+            # triggered) — intentionally overrides calibration to showcase
+            # the full alerting pipeline for demonstration purposes.
+            activity_factor = 1.15
+            convective_core_shape = np.maximum(
+                convective_core_shape,
+                np.exp(-((X - 0.2)**2 + (Y + 0.1)**2) / 0.25)
+            )
+
+        convective_core = convective_core_shape * activity_factor
 
         # 1. Integrated Water Vapor (IWV) - Anchored to Real-Time Derived IWV
         iwv_baseline = live["derived_iwv"] + 6.0 * np.sin(Y)

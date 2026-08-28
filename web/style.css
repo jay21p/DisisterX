@@ -83,6 +83,12 @@ body.clean-dark {
   font-size: 1.15rem;
 }
 
+.brand-logo-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
 .brand-name {
   font-size: 1.1rem;
   font-weight: 700;
