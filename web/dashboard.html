@@ -22,7 +22,7 @@
 <body class="clean-dark">
 
   <!-- ================= TOP NAVIGATION BAR ================= -->
-  <header class="app-header">
+  <header class="app-header hud-panel">
     <div class="header-left">
       <a href="/" class="brand-badge" title="Back to DisasterX Home" style="text-decoration:none;">
         <img src="/static/assets/logo-512.png" alt="DisasterX" class="brand-logo-img">
@@ -52,6 +52,7 @@
       <!-- Live Clock -->
       <div class="clock-badge">
         <span id="liveClock" class="clock-text">--:--:-- IST</span>
+        <span class="clock-sync-text">SYNCED · INSAT/IMDAA</span>
       </div>
 
       <!-- How It Works Guide Button -->
@@ -72,7 +73,7 @@
       <!-- Active Warnings Drawer Toggle -->
       <button id="btnToggleAlerts" class="btn-alert-badge" title="View Active Warnings">
         <span>🔔 Warnings</span>
-        <span id="alertCountBadge" class="badge-count">0</span>
+        <span id="alertCountBadge" class="badge-count zero">0</span>
       </button>
     </div>
   </header>
@@ -82,7 +83,7 @@
     <div id="gisMap" class="gis-map"></div>
 
     <!-- FLOATING HAZARD LAYER SELECTOR (Top Center) -->
-    <div class="hazard-filter-bar">
+    <div class="hazard-filter-bar hud-panel">
       <button class="filter-pill active" data-layer="composite">
         <span class="pill-icon">🛡️</span> Composite Risk
       </button>
@@ -101,7 +102,7 @@
     </div>
 
     <!-- FLOATING TIMELINE SCRUBBER (Bottom Center) -->
-    <div class="timeline-bar">
+    <div class="timeline-bar hud-panel">
       <button id="btnPlayTimeline" class="play-btn" title="Play 2h-6h Storm Evolution">
         <svg id="playIcon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
           <path d="M8 5v14l11-7z"/>
@@ -114,6 +115,7 @@
           <span id="activeLeadIndicator" class="lead-active-text">Lead Impact: +2 Hours</span>
         </div>
         <div class="lead-step-buttons">
+          <div class="lead-track-line"><div id="leadTrackFill" class="lead-track-fill"></div></div>
           <button class="step-btn active" data-lead="2.0">+2h (Onset)</button>
           <button class="step-btn" data-lead="3.0">+3h (Peak)</button>
           <button class="step-btn" data-lead="4.0">+4h</button>
@@ -123,9 +125,13 @@
       </div>
     </div>
 
-    <!-- RISK SEVERITY LEGEND (Bottom Left) -->
-    <div class="minimal-legend">
-      <div class="legend-head">Risk Scale</div>
+    <!-- RISK SEVERITY LEGEND (Bottom Left) — gradient meter -->
+    <div class="minimal-legend hud-panel">
+      <div class="legend-head"><span>Composite Risk Scale</span><span class="legend-live-dot"></span></div>
+      <div class="risk-meter-track"></div>
+      <div class="risk-meter-labels">
+        <span>0%</span><span>30%</span><span>50%</span><span>75%</span><span>100%</span>
+      </div>
       <div class="legend-items">
         <span class="leg-tag"><span class="dot dot-normal"></span> Normal</span>
         <span class="leg-tag"><span class="dot dot-mod"></span> Moderate (>30%)</span>
@@ -138,14 +144,24 @@
     <div id="mapClickPrompt" class="map-hint-banner">
       <span>💡 <strong>Click any map hotspot</strong> to view Explainable AI (XAI) atmospheric precursors.</span>
     </div>
+
+    <!-- SYSTEM STATUS CHIP (bottom-right, authority/credibility signal) -->
+    <div class="system-status-chip">
+      <div class="sys-row"><span class="sys-label">ENGINE</span><span class="sys-value">MTL-v2.5</span></div>
+      <div class="sys-row"><span class="sys-label">FEED</span><span class="sys-ok">● LIVE</span></div>
+      <div class="sys-row"><span class="sys-label">GRID</span><span class="sys-value" id="sysGridCount">— cells</span></div>
+    </div>
   </main>
 
   <!-- ================= WARNINGS DRAWER (Slide-Over from Left) ================= -->
   <aside id="alertsDrawer" class="slide-drawer drawer-left">
     <div class="drawer-header">
-      <div>
-        <h3>Active Early Warnings</h3>
-        <p class="drawer-subtitle">Categorized lead-time alerts for disaster response</p>
+      <div class="drawer-header-title-row">
+        <div class="drawer-icon-badge">🔔</div>
+        <div>
+          <h3>Active Early Warnings</h3>
+          <p class="drawer-subtitle">Categorized lead-time alerts for disaster response</p>
+        </div>
       </div>
       <button id="btnCloseAlerts" class="btn-close" title="Close Drawer">✕</button>
     </div>
@@ -158,9 +174,12 @@
   <!-- ================= XAI PRECURSOR INSPECTOR (Slide-Over from Right) ================= -->
   <aside id="xaiDrawer" class="slide-drawer drawer-right">
     <div class="drawer-header">
-      <div>
-        <h3>Explainable AI (XAI) Diagnostics</h3>
-        <p id="xaiCoordText" class="drawer-subtitle">Select a point on the map</p>
+      <div class="drawer-header-title-row">
+        <div class="drawer-icon-badge">🧠</div>
+        <div>
+          <h3>Explainable AI (XAI) Diagnostics</h3>
+          <p id="xaiCoordText" class="drawer-subtitle">Select a point on the map</p>
+        </div>
       </div>
       <button id="btnCloseXai" class="btn-close" title="Close Panel">✕</button>
     </div>
@@ -176,7 +195,7 @@
       <div class="modal-header">
         <div class="modal-title">
           <span class="modal-icon">📖</span>
-          <h3>How DisasterX Works & User Guide</h3>
+          <h3>How DisasterX Works &amp; User Guide</h3>
         </div>
         <button id="btnCloseGuide" class="btn-close">✕</button>
       </div>

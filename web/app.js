@@ -147,6 +147,12 @@ async function loadData() {
     }
 
     renderMapGrid();
+
+    // Update system status chip grid-cell count (authority/credibility signal)
+    const sysGridCount = document.getElementById('sysGridCount');
+    if (sysGridCount && data.features) {
+      sysGridCount.innerText = `${data.features.length} cells`;
+    }
   } catch (err) {
     console.error('Error loading nowcast grid:', err);
   }
@@ -193,6 +199,21 @@ function renderMapGrid() {
     });
 
     STATE.mapLayers.gridGroup.addLayer(circle);
+
+    // Add a subtle radar-style pulse ring around genuinely Critical cells only
+    // (>=75%) — reinforces urgency exactly where it's warranted, and nowhere
+    // else, so the visual signal stays calibrated and trustworthy.
+    if (STATE.activeLayer === 'composite' && val >= 0.75) {
+      const ring = L.circle([coords[1], coords[0]], {
+        radius: 9000,
+        color: color,
+        fillOpacity: 0,
+        weight: 1.5,
+        className: 'risk-pulse-ring',
+        interactive: false
+      });
+      STATE.mapLayers.gridGroup.addLayer(ring);
+    }
   });
 }
 
@@ -222,6 +243,14 @@ function setLeadTime(lt) {
   });
 
   document.getElementById('activeLeadIndicator').innerText = `Lead Impact: +${lt} Hours`;
+
+  // Animate the connected progress track behind the lead-time steps (2h-6h range)
+  const trackFill = document.getElementById('leadTrackFill');
+  if (trackFill) {
+    const pct = ((lt - 2.0) / (6.0 - 2.0)) * 100;
+    trackFill.style.width = `${Math.max(6, pct)}%`;
+  }
+
   loadData();
 }
 
@@ -395,6 +424,14 @@ async function fetchAlerts() {
 
     const countBadge = document.getElementById('alertCountBadge');
     countBadge.innerText = data.total_active_alerts;
+    const alertBtn = document.getElementById('btnToggleAlerts');
+    if (data.total_active_alerts > 0) {
+      countBadge.classList.remove('zero');
+      if (alertBtn) alertBtn.classList.add('has-active');
+    } else {
+      countBadge.classList.add('zero');
+      if (alertBtn) alertBtn.classList.remove('has-active');
+    }
 
     const list = document.getElementById('alertsList');
     if (!data.alerts || data.alerts.length === 0) {
