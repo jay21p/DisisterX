@@ -25,7 +25,6 @@
     <div class="topbar-actions">
       <select id="langSelect" class="lang-select" title="Language"></select>
       <button id="voiceBtn" class="icon-btn" title="Voice input">🎤</button>
-      <button id="menuBtn" class="icon-btn hide-desktop" title="Menu">☰</button>
     </div>
   </header>
 
@@ -33,7 +32,7 @@
   <main class="layout">
 
     <!-- -------- LEFT: Dashboard -------- -->
-    <section class="dashboard" id="dashboard">
+    <section class="dashboard tab-screen active" id="dashboard">
 
       <div class="search-row">
         <input id="locInput" type="text" placeholder="Search city / village / district… e.g. Nashik" autocomplete="off" />
@@ -89,7 +88,7 @@
     </section>
 
     <!-- -------- RIGHT: Chat -------- -->
-    <section class="chat-panel" id="chatPanel">
+    <section class="chat-panel tab-screen" id="chatPanel">
       <div class="chat-header">
         <span>💬 Ask WeatherGPT</span>
         <button id="clearChatBtn" class="icon-btn small" title="Clear chat">🗑️</button>
@@ -120,9 +119,19 @@
 
   </main>
 
-  <footer class="footer">
+  <footer class="footer hide-mobile">
     <span>WeatherGPT · SIH 2026 Prototype · Data: Open-Meteo (GFS/ICON NWP blend) · Not an official IMD alert system</span>
   </footer>
+
+  <!-- ===================== MOBILE BOTTOM TAB BAR ===================== -->
+  <nav class="bottom-tabs" id="bottomTabs">
+    <button class="tab-btn active" data-tab="dashboard">
+      <span class="tab-icon">🌦️</span><span class="tab-label">Weather</span>
+    </button>
+    <button class="tab-btn" data-tab="chatPanel">
+      <span class="tab-icon">💬</span><span class="tab-label">Chat</span>
+    </button>
+  </nav>
 </div>
 
 <script src="app.js"></script>

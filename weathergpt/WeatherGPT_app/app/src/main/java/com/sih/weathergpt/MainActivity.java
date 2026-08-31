@@ -1,17 +1,19 @@
 package com.sih.weathergpt;
 
-import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.Manifest;
 import android.os.Bundle;
-import android.view.KeyEvent;
 import android.webkit.GeolocationPermissions;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -29,6 +31,12 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
  *
  * To point this app at your deployed backend, edit
  * res/values/strings.xml -> weathergpt_url.
+ *
+ * UI/UX matches the sister DisasterX app for a consistent product family:
+ *  - Branded header bar
+ *  - Content in a rounded, elevated card
+ *  - Bottom action bar with 📞 112 Call (emergency dial) and 💬 Message
+ *    (offline mesh chat via BitChat) buttons, same behaviour as DisasterX.
  *
  * Features wired up for a good native feel:
  *  - Pull-to-refresh (SwipeRefreshLayout)
@@ -102,6 +110,40 @@ public class MainActivity extends AppCompatActivity {
 
         String url = getString(R.string.weathergpt_url);
         webView.loadUrl(url);
+
+        // =========================
+        // 💬 MESSAGE - OFFLINE MESH CHAT (BitChat)
+        // Same integration as the sister DisasterX app: lets users reach
+        // emergency/community mesh chat even without mobile network,
+        // useful in the same severe-weather scenarios WeatherGPT warns about.
+        // =========================
+        Button offlineMessage = findViewById(R.id.offlinemessage);
+        offlineMessage.setOnClickListener(v -> {
+            try {
+                Intent intent = new Intent();
+                intent.setClassName(
+                        "com.bitchat.droid",
+                        "com.bitchat.android.MainActivity"
+                );
+                startActivity(intent);
+            } catch (Exception e) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "BitChat is not installed",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
+
+        // =========================
+        // 📞 EMERGENCY CALL - 112
+        // =========================
+        Button emergencyCall = findViewById(R.id.emergencycall);
+        emergencyCall.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_DIAL);
+            intent.setData(Uri.parse("tel:112"));
+            startActivity(intent);
+        });
     }
 
     private void requestRuntimePermissions() {
