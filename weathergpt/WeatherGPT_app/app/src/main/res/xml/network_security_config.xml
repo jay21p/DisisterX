@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Allows the WebView to load the WeatherGPT backend over plain HTTP as well
+  as HTTPS, useful when pointing the app at a local dev server / sandbox
+  preview URL during hackathon demos. For production, deploy the backend
+  behind HTTPS and you can tighten this file.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -390,9 +390,18 @@ web_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 if os.path.exists(web_dir):
     app.mount("/static", StaticFiles(directory=web_dir), name="static")
 
-@app.get("/", summary="DisasterX Spatial Web Dashboard", tags=["Frontend"])
+@app.get("/", summary="DisasterX Marketing Landing Page", tags=["Frontend"])
 def serve_index():
+    """Serves the public-facing landing page introducing DisasterX."""
     index_path = os.path.join(web_dir, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
     return {"message": "DisasterX Backend Running. Web frontend directory not found."}
+
+@app.get("/dashboard", summary="DisasterX Live Spatial Nowcasting Dashboard", tags=["Frontend"])
+def serve_dashboard():
+    """Serves the interactive live GIS nowcasting dashboard."""
+    dashboard_path = os.path.join(web_dir, "dashboard.html")
+    if os.path.exists(dashboard_path):
+        return FileResponse(dashboard_path)
+    raise HTTPException(status_code=404, detail="Dashboard not found.")

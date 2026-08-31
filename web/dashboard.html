@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DisasterX — AI Hyper-Local Severe Weather Nowcasting</title>
+
+  <!-- Modern Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/static/assets/logo-512.png">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="clean-dark dashboard-shell">
+
+  <!-- ================= TOP NAVIGATION (matches landing-page nav language) ================= -->
+  <header class="dash-nav">
+    <a href="/" class="dash-brand" title="Back to DisasterX Home">
+      <img src="/static/assets/logo-512.png" alt="DisasterX" class="brand-logo-img">
+      <span class="brand-name">Disaster<strong>X</strong></span>
+      <span class="brand-pill">AI NOWCAST (2–6h)</span>
+    </a>
+
+    <div class="dash-nav-mid">
+      <div class="telemetry-pill" title="Live INSAT-3D/3DR Satellite + IMDAA Baseline Active">
+        <span class="live-pulse"></span>
+        <span class="telemetry-text">INSAT &amp; IMDAA Real-Time Link</span>
+      </div>
+      <div class="clock-badge">
+        <span id="liveClock" class="clock-text">--:--:-- IST</span>
+        <span class="clock-sync-text">SYNCED · INSAT/IMDAA</span>
+      </div>
+    </div>
+
+    <div class="dash-nav-actions">
+      <button id="btnOpenGuide" class="btn-ghost-dash" title="View Quick User Guide">
+        <span>📖 How to Use</span>
+      </button>
+      <a href="/docs" target="_blank" class="btn-ghost-dash" title="Open Interactive Swagger REST API Explorer">
+        <span>⚡ API Docs</span>
+      </a>
+      <button id="btnToggleAlerts" class="btn-alert-badge" title="View Active Warnings">
+        <span>🔔 Warnings</span>
+        <span id="alertCountBadge" class="badge-count zero">0</span>
+      </button>
+      <button id="btnQuickSim" class="btn-primary-dash" title="Trigger a live simulated cloudburst event">
+        <span>⚡ Simulate Cloudburst</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= MAIN WORKSPACE: SIDEBAR + MAP CARD ================= -->
+  <div class="dash-body">
+
+    <!-- ============ LEFT CONTROL SIDEBAR ============ -->
+    <aside class="control-sidebar">
+
+      <!-- Sector Selector -->
+      <div class="side-card">
+        <div class="side-card-head"><span>📍 Monitored Sector</span></div>
+        <div class="region-select-wrap">
+          <select id="regionSelect" class="region-select full-width">
+            <option value="uttarakhand" selected>Western Himalayas (Uttarakhand / HP)</option>
+            <option value="mumbai_konkan">Western Ghats &amp; Coastal Mumbai</option>
+            <option value="northeast_assam">Northeast (Meghalaya &amp; Assam)</option>
+            <option value="kerala_ghats">Southern Western Ghats (Kerala)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Hazard Layer Selector -->
+      <div class="side-card">
+        <div class="side-card-head"><span>🛡️ Hazard Layer</span></div>
+        <div class="layer-list">
+          <button class="filter-pill active" data-layer="composite">
+            <span class="pill-icon">🛡️</span><span class="pill-label">Composite Risk</span>
+          </button>
+          <button class="filter-pill" data-layer="cloudburst">
+            <span class="pill-icon">🌧️</span><span class="pill-label">Cloudburst <em>(IWV+CTT)</em></span>
+          </button>
+          <button class="filter-pill" data-layer="flashflood">
+            <span class="pill-icon">🌊</span><span class="pill-label">Flash Flood <em>(DEM)</em></span>
+          </button>
+          <button class="filter-pill" data-layer="thunderstorm">
+            <span class="pill-icon">🌩️</span><span class="pill-label">Thunderstorm <em>(CAPE)</em></span>
+          </button>
+          <button class="filter-pill" data-layer="iwv">
+            <span class="pill-icon">💧</span><span class="pill-label">Moisture Fuel <em>(IWV)</em></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Timeline / Lead-Time Scrubber -->
+      <div class="side-card">
+        <div class="side-card-head">
+          <span>⏱️ Actionable Lead Time</span>
+          <button id="btnPlayTimeline" class="play-btn" title="Play 2h-6h Storm Evolution">
+            <svg id="playIcon" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </button>
+        </div>
+        <div id="activeLeadIndicator" class="lead-active-text">Lead Impact: +2 Hours</div>
+        <div class="lead-step-buttons">
+          <div class="lead-track-line"><div id="leadTrackFill" class="lead-track-fill"></div></div>
+          <button class="step-btn active" data-lead="2.0" title="+2h (Onset)">+2h</button>
+          <button class="step-btn" data-lead="3.0" title="+3h (Peak)">+3h</button>
+          <button class="step-btn" data-lead="4.0" title="+4h">+4h</button>
+          <button class="step-btn" data-lead="5.0" title="+5h">+5h</button>
+          <button class="step-btn" data-lead="6.0" title="+6h (Outflow)">+6h</button>
+        </div>
+      </div>
+
+      <!-- Risk Legend -->
+      <div class="side-card">
+        <div class="side-card-head"><span>📊 Composite Risk Scale</span><span class="legend-live-dot"></span></div>
+        <div class="risk-meter-track"></div>
+        <div class="risk-meter-labels">
+          <span>0%</span><span>30%</span><span>50%</span><span>75%</span><span>100%</span>
+        </div>
+        <div class="legend-items">
+          <span class="leg-tag"><span class="dot dot-normal"></span> Normal</span>
+          <span class="leg-tag"><span class="dot dot-mod"></span> Moderate</span>
+          <span class="leg-tag"><span class="dot dot-high"></span> High</span>
+          <span class="leg-tag"><span class="dot dot-crit"></span> Critical</span>
+        </div>
+      </div>
+
+      <!-- System Status -->
+      <div class="side-card system-status-card">
+        <div class="sys-row"><span class="sys-label">ENGINE</span><span class="sys-value">MTL-v2.5</span></div>
+        <div class="sys-row"><span class="sys-label">FEED</span><span class="sys-ok">● LIVE</span></div>
+        <div class="sys-row"><span class="sys-label">GRID</span><span class="sys-value" id="sysGridCount">— cells</span></div>
+      </div>
+    </aside>
+
+    <!-- ============ MAP STAGE (bounded, card-framed viewport) ============ -->
+    <main class="map-stage">
+      <div class="map-card">
+        <div id="gisMap" class="gis-map"></div>
+
+        <!-- MAP INTERACTION HINT -->
+        <div id="mapClickPrompt" class="map-hint-banner">
+          <span>💡 <strong>Click any map hotspot</strong> to view Explainable AI (XAI) atmospheric precursors.</span>
+        </div>
+      </div>
+
+      <!-- ================= WARNINGS DRAWER (Slide-Over) ================= -->
+      <aside id="alertsDrawer" class="slide-drawer drawer-left">
+        <div class="drawer-header">
+          <div class="drawer-header-title-row">
+            <div class="drawer-icon-badge">🔔</div>
+            <div>
+              <h3>Active Early Warnings</h3>
+              <p class="drawer-subtitle">Categorized lead-time alerts for disaster response</p>
+            </div>
+          </div>
+          <button id="btnCloseAlerts" class="btn-close" title="Close Drawer">✕</button>
+        </div>
+
+        <div class="drawer-body" id="alertsList">
+          <div class="drawer-empty">Scanning for threshold breaches...</div>
+        </div>
+      </aside>
+
+      <!-- ================= XAI PRECURSOR INSPECTOR (Slide-Over) ================= -->
+      <aside id="xaiDrawer" class="slide-drawer drawer-right">
+        <div class="drawer-header">
+          <div class="drawer-header-title-row">
+            <div class="drawer-icon-badge">🧠</div>
+            <div>
+              <h3>Explainable AI (XAI) Diagnostics</h3>
+              <p id="xaiCoordText" class="drawer-subtitle">Select a point on the map</p>
+            </div>
+          </div>
+          <button id="btnCloseXai" class="btn-close" title="Close Panel">✕</button>
+        </div>
+
+        <div class="drawer-body" id="xaiBody">
+          <!-- Filled dynamically on click -->
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- ================= USER GUIDE MODAL (How to Use) ================= -->
+  <div id="guideModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="modal-icon">📖</span>
+          <h3>How DisasterX Works &amp; User Guide</h3>
+        </div>
+        <button id="btnCloseGuide" class="btn-close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="guide-section">
+          <h4>1. The Core Objective</h4>
+          <p>DisasterX is an AI Early Warning engine that predicts <strong>Cloudbursts, Severe Thunderstorms, and Flash Floods 2 to 6 hours before impact</strong>, bypassing traditional weather simulation delays.</p>
+        </div>
+
+        <div class="guide-section">
+          <h4>2. The 4 Key Atmospheric Precursors</h4>
+          <div class="guide-grid">
+            <div class="guide-item">
+              <span class="g-title">💧 Integrated Water Vapor (IWV)</span>
+              <p>The Fuel: Sensed by INSAT-3DR satellite. Rapid surges above <strong>60 kg/m²</strong> indicate explosive moisture pooling for cloudbursts.</p>
+            </div>
+            <div class="guide-item">
+              <span class="g-title">⚡ CAPE / Instability</span>
+              <p>The Energy: Convective Available Potential Energy from IMDAA. Values above <strong>2500 J/kg</strong> indicate severe thunderstorm energy.</p>
+            </div>
+            <div class="guide-item">
+              <span class="g-title">🌪️ Cloud Top Cooling Rate</span>
+              <p>The Trigger: Thermal IR drop rate. Rapid cooling <strong>> 12 K/hr</strong> confirms explosive vertical updrafts inside the storm.</p>
+            </div>
+            <div class="guide-item">
+              <span class="g-title">⛰️ DEM Topographic Drainage</span>
+              <p>The Flood Catalyst: High-resolution slope and river catchments calculate where cloudburst rain will funnel into flash floods.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="guide-section">
+          <h4>3. How to Interact with the Dashboard</h4>
+          <ul class="guide-list">
+            <li><strong>Timeline Controller (Sidebar)</strong>: Click <code>+2h</code>, <code>+3h</code>, <code>+4h</code>, <code>+5h</code>, <code>+6h</code> or press <strong>▶ Play</strong> to watch how the risk evolves in time.</li>
+            <li><strong>Layer Switcher (Sidebar)</strong>: Filter by <em>Cloudburst</em>, <em>Flash Flood</em>, <em>Thunderstorm</em>, or <em>Moisture Fuel (IWV)</em>.</li>
+            <li><strong>Click Any Map Point</strong>: Opens the <strong>XAI Diagnostics</strong> panel showing the exact % breakdown of why an alert was triggered.</li>
+            <li><strong>Warnings Button (🔔)</strong>: View categorized emergency advisories for SDRF/NDRF teams.</li>
+            <li><strong>Test Simulation (⚡)</strong>: Injects an instant localized convective storm scenario for live demonstration.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btnGotIt" class="btn-primary-dash">Got it, Let's Explore!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Main App JS -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
