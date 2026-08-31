@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>WeatherGPT — Conversational Weather Intelligence</title>
+<meta name="description" content="WeatherGPT: AI chatbot for weather forecasts, alerts and climate information" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛅</text></svg>" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon">⛅</span>
+      <div class="brand-text">
+        <h1>WeatherGPT</h1>
+        <p>Conversational AI for Weather, Alerts &amp; Climate</p>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <select id="langSelect" class="lang-select" title="Language"></select>
+      <button id="voiceBtn" class="icon-btn" title="Voice input">🎤</button>
+      <button id="menuBtn" class="icon-btn hide-desktop" title="Menu">☰</button>
+    </div>
+  </header>
+
+  <!-- ===================== MAIN LAYOUT ===================== -->
+  <main class="layout">
+
+    <!-- -------- LEFT: Dashboard -------- -->
+    <section class="dashboard" id="dashboard">
+
+      <div class="search-row">
+        <input id="locInput" type="text" placeholder="Search city / village / district… e.g. Nashik" autocomplete="off" />
+        <button id="locSearchBtn" class="primary-btn">🔎 Search</button>
+        <button id="locGpsBtn" class="secondary-btn" title="Use my location">📍</button>
+      </div>
+      <div id="locSuggestions" class="suggestions"></div>
+
+      <div class="card current-card" id="currentCard">
+        <div class="current-top">
+          <div>
+            <div class="place-name" id="placeName">Select a location</div>
+            <div class="place-sub" id="placeSub">&nbsp;</div>
+          </div>
+          <div class="current-icon" id="currentIcon">🌍</div>
+        </div>
+        <div class="current-temp" id="currentTemp">--°C</div>
+        <div class="current-desc" id="currentDesc">Waiting for data…</div>
+        <div class="current-grid" id="currentGrid"></div>
+      </div>
+
+      <div class="card">
+        <h3>📅 7-Day Forecast</h3>
+        <div id="dailyForecast" class="daily-forecast"></div>
+      </div>
+
+      <div class="card">
+        <h3>⏱️ Next 24 Hours</h3>
+        <div id="hourlyForecast" class="hourly-forecast"></div>
+      </div>
+
+      <div class="card">
+        <h3>🚨 Extreme Weather Alerts</h3>
+        <div id="alertsList" class="alerts-list"></div>
+      </div>
+
+      <div class="card">
+        <h3>🧭 Decision Support Advisory</h3>
+        <div class="persona-row" id="personaRow">
+          <button data-persona="farmer" class="chip active">🌾 Farmer</button>
+          <button data-persona="aviation" class="chip">✈️ Aviation</button>
+          <button data-persona="marine" class="chip">🚢 Marine</button>
+          <button data-persona="urban" class="chip">🏙️ Urban</button>
+        </div>
+        <div id="advisoryText" class="advisory-text">Search a location to get tailored advisories.</div>
+      </div>
+
+      <div class="card">
+        <h3>😮‍💨 Air Quality</h3>
+        <div id="aqiBox" class="aqi-box">--</div>
+      </div>
+
+    </section>
+
+    <!-- -------- RIGHT: Chat -------- -->
+    <section class="chat-panel" id="chatPanel">
+      <div class="chat-header">
+        <span>💬 Ask WeatherGPT</span>
+        <button id="clearChatBtn" class="icon-btn small" title="Clear chat">🗑️</button>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg bot">
+          <div class="bubble">
+            👋 Hi! I'm <b>WeatherGPT</b>. Ask me about weather, forecasts, alerts, air quality
+            or climate trends for any place in India — in your own language.
+            <br/><br/>Try: <i>"Will it rain in Pune tomorrow?"</i> or <i>"Cyclone alert Chennai"</i>.
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-chips" id="quickChips">
+        <button class="chip small">Today's weather in Delhi</button>
+        <button class="chip small">Will it rain this week?</button>
+        <button class="chip small">Any flood alerts?</button>
+        <button class="chip small">Crop advisory for farmers</button>
+      </div>
+
+      <form id="chatForm" class="chat-input-row">
+        <input id="chatInput" type="text" placeholder="Type your weather question…" autocomplete="off" />
+        <button type="submit" class="primary-btn">➤</button>
+      </form>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>WeatherGPT · SIH 2026 Prototype · Data: Open-Meteo (GFS/ICON NWP blend) · Not an official IMD alert system</span>
+  </footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

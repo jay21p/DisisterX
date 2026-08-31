@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.WeatherGPT" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#0D6EFD</item>
+        <item name="colorPrimaryDark">#0958D9</item>
+        <item name="colorAccent">#22B8FF</item>
+        <item name="android:statusBarColor">#0D6EFD</item>
+    </style>
+</resources>

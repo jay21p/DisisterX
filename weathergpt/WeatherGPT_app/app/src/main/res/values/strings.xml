@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WeatherGPT</string>
+    <!-- Change this to your deployed WeatherGPT website URL before building -->
+    <string name="weathergpt_url">https://8010-io5eartjdg04kk7sja4nr-8f57ffe2.sandbox.novita.ai/</string>
+</resources>
