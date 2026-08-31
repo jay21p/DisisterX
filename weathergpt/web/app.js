@@ -399,9 +399,33 @@ function init() {
     $("#chatMessages").innerHTML = `<div class="msg bot"><div class="bubble">👋 Chat cleared. Ask me anything about the weather!</div></div>`;
   });
 
-  $("#menuBtn").addEventListener("click", () => {
-    const dash = $("#dashboard");
-    dash.style.display = dash.style.display === "none" ? "flex" : "none";
+  initTabs();
+}
+
+// ---------------------------------------------------------------------
+// Mobile bottom tab bar (Weather / Chat screens)
+// ---------------------------------------------------------------------
+function initTabs() {
+  const tabBtns = $all(".tab-btn");
+  if (!tabBtns.length) return;
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const targetId = btn.dataset.tab;
+
+      tabBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      $all(".tab-screen").forEach(scr => scr.classList.remove("active"));
+      const target = document.getElementById(targetId);
+      if (target) target.classList.add("active");
+
+      // Keep the chat scrolled to the latest message when switching to it
+      if (targetId === "chatPanel") {
+        const box = $("#chatMessages");
+        if (box) box.scrollTop = box.scrollHeight;
+      }
+    });
   });
 }
 
